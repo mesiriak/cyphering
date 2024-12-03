@@ -34,6 +34,9 @@ func (s *State) clearKeysEntries() {
 	s.serverPublicKeyEntry.SetText("")
 	s.nEntry.SetText("")
 	s.serverNEntry.SetText("")
+
+	s.keys = nil
+	s.serverKeys = nil
 }
 
 func (s *State) fillKeysEntries() {
