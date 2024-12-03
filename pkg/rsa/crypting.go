@@ -13,7 +13,7 @@ func Encrypt(message string, publicKey, N *big.Int) (string, error) {
 
 	// If message converted to int is bigger than N, it cannot be encrypted.
 	if messageNumber.Cmp(N) >= 0 {
-		return "", errors.New(fmt.Sprintf("Message \"%s\" is too large for encryption with the given modulus N", message))
+		return "", errors.New(fmt.Sprintf("Message \"%s\" cannot be encrypted with the given bit size.", message))
 	}
 
 	// Perform messageNumber ^ publicKey % N (RSA encryption).

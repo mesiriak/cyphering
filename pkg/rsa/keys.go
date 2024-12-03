@@ -6,7 +6,7 @@ import (
 	"math/big"
 )
 
-type RSAKeys struct {
+type Keys struct {
 	PublicKey  *big.Int
 	PrivateKey *big.Int
 	N          *big.Int
@@ -44,11 +44,11 @@ func GeneratePrimes(bitSize int) (PrimeNumbers, error) {
 	return PrimeNumbers{p, phi, n, phi}, nil
 }
 
-func GenerateKeys(bitSize int) (*RSAKeys, error) {
+func GenerateKeys(bitSize int) (*Keys, error) {
 	primes, err := GeneratePrimes(bitSize)
 
 	if err != nil {
-		return &RSAKeys{}, err
+		return &Keys{}, err
 	}
 
 	encrypt := big.NewInt(65537)
@@ -56,8 +56,8 @@ func GenerateKeys(bitSize int) (*RSAKeys, error) {
 	decrypt, err := inverse(encrypt, primes.phi)
 
 	if err != nil {
-		return &RSAKeys{}, err
+		return &Keys{}, err
 	}
 
-	return &RSAKeys{PublicKey: encrypt, PrivateKey: decrypt, N: primes.n}, nil
+	return &Keys{PublicKey: encrypt, PrivateKey: decrypt, N: primes.n}, nil
 }
