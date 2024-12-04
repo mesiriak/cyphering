@@ -149,10 +149,7 @@ func NewRequestEntriesContainer() *fyne.Container {
 func NewRequestButtonsContainer() *fyne.Container {
 
 	sendRawButton := widget.NewButton("Send raw", sendRawData)
-
-	sendJsonButton := widget.NewButton("Send JSON", func() {
-
-	})
+	sendJsonButton := widget.NewButton("Send JSON", sendJsonData)
 
 	return container.NewGridWithColumns(2, sendRawButton, sendJsonButton)
 }

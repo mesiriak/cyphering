@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"encoding/json"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/mesiriak/cyphering/pkg/rsa"
@@ -57,6 +58,18 @@ func (s *State) checkSendingPossible() (bool, string) {
 
 	if strings.TrimSpace(s.requestEntry.Text) == "" {
 		return false, "Enter request data before sending."
+	}
+
+	return true, ""
+}
+
+func (s *State) checkJsonValid() (bool, string) {
+	var js json.RawMessage
+
+	unmarshalledJsonError := json.Unmarshal([]byte(state.requestEntry.Text), &js)
+
+	if unmarshalledJsonError != nil {
+		return false, unmarshalledJsonError.Error()
 	}
 
 	return true, ""
