@@ -17,6 +17,7 @@ func NewGUI() (fyne.App, error) {
 	// Set position and size.
 	state.window.Resize(fyne.NewSize(1020, 640))
 	state.window.CenterOnScreen()
+	state.window.SetFixedSize(true)
 
 	keysContainer := NewKeysContainer()
 	keysManipulatorContainer := NewKeysManipulatorContainer()
