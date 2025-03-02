@@ -1,37 +1,80 @@
 package aes
 
-import (
-	"encoding/hex"
-	"errors"
-	"fmt"
-	"math/big"
-)
+import "errors"
 
-func Encrypt(message string, publicKey, N *big.Int) (string, error) {
-	messageNumber := stringToBigInt(message)
+const blockSize = 16
 
-	// If message converted to int is bigger than N, it cannot be encrypted.
-	if messageNumber.Cmp(N) >= 0 {
-		return "", errors.New(fmt.Sprintf("Message \"%s\" cannot be encrypted with the given bit size.", message))
+// EncryptBlock encrypts one block - 16 byte.
+func EncryptBlock(input []byte, w []uint32, Nr int) []byte {
+	state := make([]byte, 16)
+	copy(state, input)
+
+	addRoundKey(state, w, 0)
+	for round := 1; round < Nr; round++ {
+		subBytes(state)
+		shiftRows(state)
+		mixColumns(state)
+		addRoundKey(state, w, round)
 	}
+	subBytes(state)
+	shiftRows(state)
+	addRoundKey(state, w, Nr)
 
-	// Perform messageNumber ^ publicKey % N (RSA encryption).
-	cipherText := new(big.Int).Exp(messageNumber, publicKey, N)
-
-	return hex.EncodeToString(cipherText.Bytes()), nil
+	return state
 }
 
-func Decrypt(cipherText string, privateKey, N *big.Int) (string, error) {
-	cipherTextBytes, err := hex.DecodeString(cipherText)
+// DecryptBlock decrypts one block - 16 bytes.
+func DecryptBlock(input []byte, w []uint32, Nr int) []byte {
+	state := make([]byte, 16)
+	copy(state, input)
 
+	addRoundKey(state, w, Nr)
+	for round := Nr - 1; round > 0; round-- {
+		invShiftRows(state)
+		invSubBytes(state)
+		addRoundKey(state, w, round)
+		invMixColumns(state)
+	}
+	invShiftRows(state)
+	invSubBytes(state)
+	addRoundKey(state, w, 0)
+
+	return state
+}
+
+func Encrypt(plaintext string, key []byte, keySizeBits int) (string, error) {
+	data := ApplyPadding([]byte(plaintext))
+	w, Nr, err := KeyExpansion(key, keySizeBits)
 	if err != nil {
 		return "", err
 	}
+	var ciphertext []byte
+	for i := 0; i < len(data); i += blockSize {
+		block := data[i : i+blockSize]
+		encryptedBlock := EncryptBlock(block, w, Nr)
+		ciphertext = append(ciphertext, encryptedBlock...)
+	}
+	return string(ciphertext), nil
+}
 
-	cipherTextNumber := new(big.Int).SetBytes(cipherTextBytes)
-
-	// Perform cipherTextNumber ^ privateKey % N (RSA decryption).
-	message := new(big.Int).Exp(cipherTextNumber, privateKey, N)
-
-	return bigIntToString(message), nil
+func Decrypt(ciphertext string, key []byte, keySizeBits int) (string, error) {
+	data := []byte(ciphertext)
+	if len(data)%blockSize != 0 {
+		return "", errors.New("incorrect length of ciphertext")
+	}
+	w, Nr, err := KeyExpansion(key, keySizeBits)
+	if err != nil {
+		return "", err
+	}
+	var plaintext []byte
+	for i := 0; i < len(data); i += blockSize {
+		block := data[i : i+blockSize]
+		decryptedBlock := DecryptBlock(block, w, Nr)
+		plaintext = append(plaintext, decryptedBlock...)
+	}
+	plaintext, err = RemovePadding(plaintext)
+	if err != nil {
+		return "", err
+	}
+	return string(plaintext), nil
 }
