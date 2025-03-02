@@ -1,9 +1,11 @@
 package gui
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"fyne.io/fyne/v2/dialog"
+	"github.com/mesiriak/cyphering/pkg/aes"
 	"github.com/mesiriak/cyphering/pkg/rsa"
 )
 
@@ -29,34 +31,6 @@ func sendRawData() {
 	}
 
 	state.encodedRequestEntry.SetText(encoded)
-
-	serverEncoded, err := rsa.Encrypt(
-		state.requestEntry.Text,
-		state.keys.PublicKey,
-		state.keys.N,
-	)
-
-	if err != nil {
-		dialog.NewInformation("Error during handling message", fmt.Sprintf("%s", err), state.window).Show()
-
-		return
-	}
-
-	state.serverEncodedResponseEntry.SetText(serverEncoded)
-
-	serverDecoded, err := rsa.Decrypt(
-		encoded,
-		state.serverKeys.PrivateKey,
-		state.serverKeys.N,
-	)
-
-	if err != nil {
-		dialog.NewInformation("Error during handling message", fmt.Sprintf("%s", err), state.window).Show()
-
-		return
-	}
-
-	state.serverResponseEntry.SetText(serverDecoded)
 }
 
 func sendJsonData() {
@@ -103,56 +77,36 @@ func sendJsonData() {
 	}
 
 	state.encodedRequestEntry.SetText(string(marshalledEncodedJson))
+}
 
-	var unmarshalledServerEncodedJsonData interface{}
+func sendAESRawData() {
+	isSendingPossible, alert := state.checkAESSendingPossible()
 
-	if err := json.Unmarshal([]byte(state.requestEntry.Text), &unmarshalledServerEncodedJsonData); err != nil {
-		dialog.NewInformation("Error during marshalling json", fmt.Sprintf("%s", err), state.window).Show()
+	if !isSendingPossible {
+		dialog.NewInformation("Error during sending message", alert, state.window).Show()
 
 		return
 	}
 
-	serverEncoded, err := rsa.EncryptStruct(
-		unmarshalledServerEncodedJsonData,
-		state.keys.PublicKey,
-		state.keys.N,
+	decodedKey, err := hex.DecodeString(state.aesKey)
+
+	if err != nil {
+		dialog.NewInformation("Error during decoding AES key", "Key cannot be decoded.", state.window).Show()
+
+		return
+	}
+
+	encoded, err := aes.Encrypt(
+		state.aesRequestEntry.Text,
+		decodedKey,
+		state.aesBitSize,
 	)
 
 	if err != nil {
-		dialog.NewInformation("Error during handling message", fmt.Sprintf("%s", err), state.window).Show()
+		dialog.NewInformation("Error during sending AES message", fmt.Sprintf("%s", err), state.window).Show()
 
 		return
 	}
 
-	marshalledServerEncodedJson, err := json.Marshal(serverEncoded)
-
-	if err != nil {
-		dialog.NewInformation("Error during marshalling json", fmt.Sprintf("%s", err), state.window).Show()
-
-		return
-	}
-
-	state.serverEncodedResponseEntry.SetText(string(marshalledServerEncodedJson))
-
-	serverDecoded, err := rsa.DecryptStruct(
-		encoded,
-		state.serverKeys.PrivateKey,
-		state.serverKeys.N,
-	)
-
-	if err != nil {
-		dialog.NewInformation("Error during handling message", fmt.Sprintf("%s", err), state.window).Show()
-
-		return
-	}
-
-	marshalledServerDecodedJson, err := json.Marshal(serverDecoded)
-
-	if err != nil {
-		dialog.NewInformation("Error during marshalling json", fmt.Sprintf("%s", err), state.window).Show()
-
-		return
-	}
-
-	state.serverResponseEntry.SetText(string(marshalledServerDecodedJson))
+	state.aesEncodedRequestEntry.SetText(hex.EncodeToString([]byte(encoded)))
 }

@@ -11,8 +11,10 @@ import (
 type State struct {
 	keys       *rsa.Keys
 	serverKeys *rsa.Keys
+	aesKey     string
 
-	bitSize int
+	bitSize    int
+	aesBitSize int
 
 	application fyne.App
 	window      fyne.Window
@@ -22,11 +24,13 @@ type State struct {
 	serverPublicKeyEntry *widget.Entry
 	nEntry               *widget.Entry
 	serverNEntry         *widget.Entry
+	aesKeyEntry          *widget.Entry
 
-	requestEntry               *widget.Entry
-	encodedRequestEntry        *widget.Entry
-	serverEncodedResponseEntry *widget.Entry
-	serverResponseEntry        *widget.Entry
+	requestEntry        *widget.Entry
+	encodedRequestEntry *widget.Entry
+
+	aesRequestEntry        *widget.Entry
+	aesEncodedRequestEntry *widget.Entry
 }
 
 func (s *State) clearKeysEntries() {
@@ -38,6 +42,16 @@ func (s *State) clearKeysEntries() {
 
 	s.keys = nil
 	s.serverKeys = nil
+}
+
+func (s *State) clearAESKeysEntries() {
+	s.aesKeyEntry.SetText("")
+
+	s.aesKey = ""
+}
+
+func (s *State) fillAESKeysEntries() {
+	s.aesKeyEntry.SetText(s.aesKey)
 }
 
 func (s *State) fillKeysEntries() {
@@ -53,10 +67,21 @@ func (s *State) fillServerKeysEntries() {
 
 func (s *State) checkSendingPossible() (bool, string) {
 	if s.keys == nil || s.serverKeys == nil {
-		return false, "You have to generate keys first."
+		return false, "You have to generate RSA keys first."
 	}
 
 	if strings.TrimSpace(s.requestEntry.Text) == "" {
+		return false, "Enter request data before sending."
+	}
+
+	return true, ""
+}
+
+func (s *State) checkAESSendingPossible() (bool, string) {
+	if s.aesKey == "" {
+		return false, "You have to generate AES key first."
+	}
+	if strings.TrimSpace(s.aesRequestEntry.Text) == "" {
 		return false, "Enter request data before sending."
 	}
 

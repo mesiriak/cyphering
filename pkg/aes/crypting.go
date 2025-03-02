@@ -42,8 +42,8 @@ func DecryptBlock(input []byte, w []uint32, Nr int) []byte {
 	return state
 }
 
-func Encrypt(plaintext string, key []byte, keySizeBits int) (string, error) {
-	data := ApplyPadding([]byte(plaintext))
+func Encrypt(message string, key []byte, keySizeBits int) (string, error) {
+	data := ApplyPadding([]byte(message))
 	w, Nr, err := KeyExpansion(key, keySizeBits)
 	if err != nil {
 		return "", err
@@ -57,8 +57,8 @@ func Encrypt(plaintext string, key []byte, keySizeBits int) (string, error) {
 	return string(ciphertext), nil
 }
 
-func Decrypt(ciphertext string, key []byte, keySizeBits int) (string, error) {
-	data := []byte(ciphertext)
+func Decrypt(cipherText string, key []byte, keySizeBits int) (string, error) {
+	data := []byte(cipherText)
 	if len(data)%blockSize != 0 {
 		return "", errors.New("incorrect length of ciphertext")
 	}
